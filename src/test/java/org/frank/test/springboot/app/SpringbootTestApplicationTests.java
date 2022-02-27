@@ -10,16 +10,15 @@ import org.frank.test.springboot.app.models.Cuenta;
 import org.frank.test.springboot.app.repositories.BancoRepository;
 import org.frank.test.springboot.app.repositories.CuentaRepository;
 import org.frank.test.springboot.app.services.CuentaService;
-import org.frank.test.springboot.app.services.CuentaServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 
 @SpringBootTest
 class SpringbootTestApplicationTests {
@@ -57,7 +56,7 @@ class SpringbootTestApplicationTests {
 		saldoOrigen = cuentaService.revisarSaldo(1L);
 		saldoDestino = cuentaService.revisarSaldo(2L);
 
-		int totalTransferencias = cuentaService.revisarTotalransferencias(1L);
+		int totalTransferencias = cuentaService.revisarTotalTransferencias(1L);
 
 		assertEquals("900", saldoOrigen.toPlainString());
 		assertEquals("2100", saldoDestino.toPlainString());
@@ -94,7 +93,7 @@ class SpringbootTestApplicationTests {
 		saldoOrigen = cuentaService.revisarSaldo(1L);
 		saldoDestino = cuentaService.revisarSaldo(2L);
 
-		int totalTransferencias = cuentaService.revisarTotalransferencias(1L);
+		int totalTransferencias = cuentaService.revisarTotalTransferencias(1L);
 
 		assertEquals("1000", saldoOrigen.toPlainString());
 		assertEquals("2000", saldoDestino.toPlainString());
@@ -124,5 +123,41 @@ class SpringbootTestApplicationTests {
 		assertEquals("Andres", cuenta1.getPersona());
 		assertEquals("Andres", cuenta2.getPersona());
 		verify(cuentaRepository, times(2)).findById(1L);
+	}
+
+	@Test
+	void testFindAll() {
+		// Given
+		List<Cuenta> cuentas = Arrays.asList(crearCuenta_001().orElseThrow(), crearCuenta_002().orElseThrow());
+		when(cuentaRepository.findAll()).thenReturn(cuentas);
+
+		// When
+		List<Cuenta> result = cuentaService.findAll();
+
+		// Then
+		assertEquals(2, result.size());
+		assertFalse(result.isEmpty());
+		assertTrue(result.contains(crearCuenta_002().orElseThrow()));
+		verify(cuentaRepository).findAll();
+	}
+
+	@Test
+	void testSave() {
+		// Given
+		Cuenta cuenta = new Cuenta(null, "Pepe", new BigDecimal("3000"));
+		when(cuentaRepository.save(any())).then(invocation -> {
+			Cuenta c = invocation.getArgument(0);
+			c.setId(3L);
+			return c;
+		});
+
+		// When
+		Cuenta result = cuentaService.save(cuenta);
+
+		// Then
+		assertEquals(3L, result.getId());
+		assertEquals("Pepe", result.getPersona());
+		assertEquals("3000", result.getSaldo().toPlainString());
+		verify(cuentaRepository).save(any());
 	}
 }
